@@ -97,13 +97,3 @@ adb shell settings delete global hidden_api_policy
 ```
 
 Close and reopen KOReader after restoring the policy.
-
-## Release
-
-Push a new version tag to build and publish an install-ready ZIP and its
-SHA-256 checksum. For example:
-
-```sh
-git tag v1.0.0
-git push origin v1.0.0
-```
