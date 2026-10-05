@@ -14,6 +14,7 @@ local _ = require("gettext")
 local BOTTOM_SETTING = "boox_bottom_gestures_disabled"
 local TOP_SETTING = "boox_top_gestures_disabled"
 local SIDE_SETTING = "boox_side_gestures_disabled"
+local LIGHT_SETTING = "boox_light_popup_suppressed"
 local BOTTOM_ACTION = "com.onyx.action.BOTTOM_GESTURE_ENABLE"
 local TOP_ACTION = "com.onyx.action.TOP_GESTURE_ENABLE"
 local SIDE_ACTION = "com.onyx.action.SIDE_GESTURE_ENABLE"
@@ -108,10 +109,34 @@ function BooxGestures:setGestureDisabled(setting, action, disabled, label, notif
 end
 
 function BooxGestures:init()
+    local SilentLight = require("silentlight")
+    self.silent_light = SilentLight:new(android, function()
+        G_reader_settings:saveSetting(LIGHT_SETTING, false)
+        UIManager:show(InfoMessage:new{
+            text = _("Silent BOOX light control failed. Restored normal light control."),
+            timeout = 3,
+        })
+    end)
+    if G_reader_settings:isTrue(LIGHT_SETTING) then
+        self:setLightPopupSuppressed(true)
+    end
     self.ui.menu:registerToMainMenu(self)
     self:apply(BOTTOM_ACTION, self:isBottomDisabled())
     self:apply(TOP_ACTION, self:isTopDisabled())
     self:apply(SIDE_ACTION, self:isSideDisabled())
+end
+
+function BooxGestures:setLightPopupSuppressed(enabled)
+    if enabled and not self.silent_light:enable() then
+        G_reader_settings:saveSetting(LIGHT_SETTING, false)
+        UIManager:show(InfoMessage:new{
+            text = _("Silent BOOX light control is unavailable on this device."),
+        })
+        return false
+    end
+    if not enabled then self.silent_light:disable() end
+    G_reader_settings:saveSetting(LIGHT_SETTING, enabled)
+    return true
 end
 
 function BooxGestures:onRequestSuspend()
@@ -139,6 +164,7 @@ function BooxGestures:onResume()
 end
 
 function BooxGestures:stopPlugin()
+    if self.silent_light then self.silent_light:disable() end
     local bottom_ok = self:apply(BOTTOM_ACTION, false)
     local top_ok = self:apply(TOP_ACTION, false)
     local side_ok = self:apply(SIDE_ACTION, false)
@@ -147,9 +173,18 @@ end
 
 function BooxGestures:addToMainMenu(menu_items)
     menu_items.boox_system_gestures = {
-        text = _("BOOX system gestures"),
-        sorting_hint = "taps_and_gestures",
+        text = _("BOOX controls"),
+        sorting_hint = "device",
         sub_item_table = {
+            {
+                text = _("Suppress BOOX light popup in KOReader"),
+                checked_func = function()
+                    return G_reader_settings:isTrue(LIGHT_SETTING)
+                end,
+                callback = function()
+                    self:setLightPopupSuppressed(not G_reader_settings:isTrue(LIGHT_SETTING))
+                end,
+            },
             {
                 text = _("Disable BOOX top gestures in KOReader"),
                 checked_func = function()

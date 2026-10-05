@@ -26,7 +26,7 @@ jobs:
             --prefix=booxgestures.koplugin/ \
             --output="$archive" \
             "$GITHUB_SHA" \
-            README.md _meta.lua main.lua
+            README.md _meta.lua main.lua silentlight.lua
 
           unzip -t "$archive"
           sha256sum "$archive" > "$archive.sha256"

@@ -2,5 +2,5 @@ local _ = require("gettext")
 
 return {
     fullname = _("BOOX gestures"),
-    description = _([[Disable BOOX top, bottom, and side swipe gestures while KOReader is active.]]),
+    description = _([[Disable BOOX swipe gestures and optionally suppress the system light popup while KOReader is active.]]),
 }
