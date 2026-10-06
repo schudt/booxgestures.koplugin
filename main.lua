@@ -131,11 +131,32 @@ end
 
 function BooxGestures:fixWarmthReadback()
     local powerd = Device:getPowerDevice()
-    -- Android reports native warmth. PowerD caches warmth on its 0–100 scale.
-    -- Multiplying by warm_diff produces out-of-range values on BOOX CTM devices.
-    powerd.frontlightWarmthHW = function(self)
+    if powerd._boox_warmth_readback_guard then return end
+    local original = powerd.frontlightWarmthHW
+    local corrected = function(self)
         return self:fromNativeWarmth(android.getScreenWarmth())
     end
+    local guarded
+    guarded = function(self)
+        local value = original(self)
+        local native = android.getScreenWarmth()
+        -- Zero cannot distinguish the old conversion from a corrected getter.
+        if native == 0 and value == 0 then return value end
+        local replacement = original
+        if type(native) == "number" and type(self.warm_diff) == "number"
+            and value == native * self.warm_diff
+            and self:toNativeWarmth(value) ~= native then
+            -- Match the known Android bug, not arbitrary driver differences.
+            replacement = corrected
+            value = self:fromNativeWarmth(native)
+        end
+        if self.frontlightWarmthHW == guarded then
+            self.frontlightWarmthHW = replacement
+        end
+        return value
+    end
+    powerd._boox_warmth_readback_guard = guarded
+    powerd.frontlightWarmthHW = guarded
     powerd.fl_warmth = powerd:frontlightWarmthHW()
 end
 

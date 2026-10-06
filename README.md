@@ -55,10 +55,12 @@ adb shell am broadcast -a com.onyx.action.SIDE_GESTURE_ENABLE --ez args_enable t
 
 ## Brightness and warmth
 
-On BOOX CTM devices, the plugin also corrects KOReader's warmth readback after
-startup. Sliders show the native hardware value instead of an inflated value
-(for example, `26` instead of `266` on Go 7). This correction applies even when
-popup suppression is off and does not change the hardware light level.
+On BOOX CTM devices, the plugin detects KOReader's known warmth conversion bug
+and corrects the readback only when needed. Sliders then show the native hardware
+value instead of an inflated value (for example, `26` instead of `266` on Go 7).
+An already-correct getter is preserved. At warmth `0`, detection waits for a
+nonzero readback. The correction applies even when popup suppression is off
+and does not change the hardware light level.
 
 Enable **Suppress BOOX light popup in KOReader** to adjust brightness and
 warmth without BOOX's SystemUI slider taking focus. This option is off by
