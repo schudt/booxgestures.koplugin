@@ -117,6 +117,9 @@ function BooxGestures:init()
             timeout = 3,
         })
     end)
+    if Device:hasNaturalLight() and self.silent_light:call() then
+        self:fixWarmthReadback()
+    end
     if G_reader_settings:isTrue(LIGHT_SETTING) then
         self:setLightPopupSuppressed(true)
     end
@@ -124,6 +127,16 @@ function BooxGestures:init()
     self:apply(BOTTOM_ACTION, self:isBottomDisabled())
     self:apply(TOP_ACTION, self:isTopDisabled())
     self:apply(SIDE_ACTION, self:isSideDisabled())
+end
+
+function BooxGestures:fixWarmthReadback()
+    local powerd = Device:getPowerDevice()
+    -- Android reports native warmth. PowerD caches warmth on its 0–100 scale.
+    -- Multiplying by warm_diff produces out-of-range values on BOOX CTM devices.
+    powerd.frontlightWarmthHW = function(self)
+        return self:fromNativeWarmth(android.getScreenWarmth())
+    end
+    powerd.fl_warmth = powerd:frontlightWarmthHW()
 end
 
 function BooxGestures:setLightPopupSuppressed(enabled)
